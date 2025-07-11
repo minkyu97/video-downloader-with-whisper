@@ -1,23 +1,15 @@
 import pathlib
-from pytubefix import YouTube
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline # type: ignore
+from download import download_audio, download_video
 
 url = input("Enter the YouTube video URL: ")
 lang = input("Enter target video language (default: en): ") or "en"
 
-video = YouTube(url)
-dist_dir = pathlib.PosixPath().cwd().joinpath("dist")
-
-video_stream = video.streams.filter(progressive=True).get_highest_resolution()
-audio_stream = video.streams.filter(only_audio=True).first()
-
-assert video_stream is not None
-assert audio_stream is not None
-
-video_stream.download(output_path="dist")
-audio_stream.download(filename_prefix="audio_", output_path="dist")
-audio_file_path = audio_stream.get_file_path(filename_prefix="audio_", output_path="dist", file_system="macOS")
+download_video(url)
+info = download_audio(url)
+audio_file_path = pathlib.PosixPath(info["requested_downloads"][0]["filepath"]) # type: ignore
+srt_file_path = audio_file_path.with_suffix(".srt")
 
 model_id = "distil-whisper/distil-large-v3.5"
 torch_dtype = torch.float32
@@ -39,7 +31,7 @@ pipe = pipeline(
     device=device,
 )
 
-result = pipe(audio_file_path, chunk_length_s=30, generate_kwargs={"language": lang}, return_timestamps=True)
+result = pipe(str(audio_file_path), chunk_length_s=30, generate_kwargs={"language": lang}, return_timestamps=True)
 
 def time_to_srt(total_time: float) -> str:
     total_seconds = int(total_time)
@@ -50,7 +42,6 @@ def time_to_srt(total_time: float) -> str:
 
     return f"{hours:02}:{minutes:02}:{seconds:02},{milliseconds:03}"
 
-srt_file_path = dist_dir.joinpath(video.title + ".srt")
 srt_file_path.touch()
 with open(srt_file_path, 'w') as srt_file:
     for i, chunk in enumerate(result["chunks"], 1): # type: ignore
@@ -58,4 +49,4 @@ with open(srt_file_path, 'w') as srt_file:
         text = chunk["text"].strip()
         srt_file.write(f"{i}\n{time_to_srt(start)} --> {time_to_srt(end)}\n{text}\n\n")
 
-pathlib.PosixPath(audio_stream.get_file_path(filename_prefix="audio_", output_path="dist", file_system="macOS")).unlink()
+audio_file_path.unlink()
