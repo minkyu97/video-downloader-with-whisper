@@ -4,6 +4,7 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline # type: ignore
 
 url = input("Enter the YouTube video URL: ")
+lang = input("Enter target video language (default: en): ") or "en"
 
 video = YouTube(url)
 dist_dir = pathlib.PosixPath().cwd().joinpath("dist")
@@ -38,7 +39,7 @@ pipe = pipeline(
     device=device,
 )
 
-result = pipe(audio_file_path, chunk_length_s=30, generate_kwargs={"language": "en"}, return_timestamps=True)
+result = pipe(audio_file_path, chunk_length_s=30, generate_kwargs={"language": lang}, return_timestamps=True)
 
 def time_to_srt(total_time: float) -> str:
     total_seconds = int(total_time)
