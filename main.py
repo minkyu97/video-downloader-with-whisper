@@ -19,7 +19,7 @@ video_stream.download(output_path="dist")
 audio_stream.download(filename_prefix="audio_", output_path="dist")
 audio_file_path = audio_stream.get_file_path(filename_prefix="audio_", output_path="dist", file_system="macOS")
 
-model_id = "openai/whisper-large-v3-turbo"
+model_id = "distil-whisper/distil-large-v3.5"
 torch_dtype = torch.float32
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 
