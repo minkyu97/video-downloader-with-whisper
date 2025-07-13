@@ -1,7 +1,6 @@
-import json
 import pathlib
 import subprocess
-from typing import Any, Sequence
+from typing import Sequence
 from download import download_video, extract_audio
 
 
@@ -18,10 +17,12 @@ def process(urls: Sequence[str], lang: str):
 
         subprocess.run([
             whisper_cpp_exec,
-            "-m", model_path,
-            "-l", lang,
+            "--model", model_path,
+            "--language", lang,
             "--output-srt", "true",
             "--output-file", str(video_file_path.with_suffix('')),
+            "--max-len", "42",
+            "--temperature", "0.1",
             str(audio_file_path)
         ], check=True)
 
