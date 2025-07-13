@@ -11,3 +11,6 @@ wheels/
 
 # Mac specific
 .DS_Store
+
+models/
+whisper-cli

@@ -1,6 +1,7 @@
 from pathlib import Path
 import ffmpeg
 from yt_dlp import YoutubeDL
+from huggingface_hub import hf_hub_download
 
 
 def download_video(url: str):
@@ -49,7 +50,14 @@ def extract_audio(video_path: Path):
     )
     return audio_path
 
+def download_ggml_model(model_id: str):
+    hf_hub_download(repo_id=model_id, filename='ggml-model.bin', local_dir='./models')
+
 
 if __name__ == "__main__":
     url = input("Enter the YouTube video URL: ")
-    video_info = download_video(url)
+    model_id = input("Enter the model id: ")
+    if url:
+        video_info = download_video(url)
+    if model_id:
+        download_ggml_model(model_id)
