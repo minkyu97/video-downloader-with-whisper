@@ -1,10 +1,13 @@
 from pathlib import Path
+from typing import Any, Sequence
 import ffmpeg
 from yt_dlp import YoutubeDL
 from huggingface_hub import hf_hub_download
 
 
-def download_video(url: str):
+def download_video(urls: Sequence[str]) -> list[dict[str, Any]]:
+    if isinstance(urls, str):
+        urls = [urls]
     __video_ext = "mp4"
     with YoutubeDL(
         {
@@ -21,10 +24,12 @@ def download_video(url: str):
             # "progress_hooks": [call_back],  # 다운로드 진행 상황을 알려주는 콜백 함수
         }
     ) as ydl:
-        ydl.download([url])
-        return ydl.extract_info(url)
+        ydl.download(urls)
+        return [ydl.extract_info(url) for url in urls] # type: ignore
 
-def download_audio(url: str):
+def download_audio(urls: Sequence[str]) -> list[dict[str, Any]]:
+    if isinstance(urls, str):
+        urls = [urls]
     with YoutubeDL(
         {
             "format": "bestaudio[ext=m4a]/bestaudio",
@@ -35,8 +40,8 @@ def download_audio(url: str):
             "retry_sleep_functions": {"fragment": lambda n: n + 1},
         }
     ) as ydl:
-        ydl.download([url])
-        return ydl.extract_info(url)
+        ydl.download(urls)
+        return [ydl.extract_info(url) for url in urls] # type: ignore
 
 
 def extract_audio(video_path: Path):
@@ -58,6 +63,6 @@ if __name__ == "__main__":
     url = input("Enter the YouTube video URL: ")
     model_id = input("Enter the model id: ")
     if url:
-        video_info = download_video(url)
+        video_info = download_video([url])
     if model_id:
         download_ggml_model(model_id)
