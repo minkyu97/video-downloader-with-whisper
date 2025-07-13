@@ -1,13 +1,20 @@
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 import ffmpeg
 from yt_dlp import YoutubeDL
 from huggingface_hub import hf_hub_download
 
 
-def download_video(urls: Sequence[str]) -> list[dict[str, Any]]:
+def download_video(urls: Sequence[str], on_finished: Callable[[str], Any] | None = None) -> list[str]:
     if isinstance(urls, str):
         urls = [urls]
+
+    filenames = []
+    def post_hook(filename: str):
+        filenames.append(filename)
+        if on_finished:
+            on_finished(filename)
+
     __video_ext = "mp4"
     with YoutubeDL(
         {
@@ -21,15 +28,22 @@ def download_video(urls: Sequence[str]) -> list[dict[str, Any]]:
             # "overwrites": True,
             "concurrent_fragment_downloads": 3,  # 동시에 N개의 영상 조각을 다운로드
             "retry_sleep_functions": {"fragment": lambda n: n + 1}, # 다운로드 실패시 1초씩 증가시키면서 재시도
-            # "progress_hooks": [call_back],  # 다운로드 진행 상황을 알려주는 콜백 함수
+            "post_hooks": [post_hook],
         }
     ) as ydl:
         ydl.download(urls)
-        return [ydl.extract_info(url) for url in urls] # type: ignore
+        return filenames
 
-def download_audio(urls: Sequence[str]) -> list[dict[str, Any]]:
+def download_audio(urls: Sequence[str], on_finished: Callable[[str], Any] | None = None) -> list[str]:
     if isinstance(urls, str):
         urls = [urls]
+
+    filenames = []
+    def post_hook(filename: str):
+        filenames.append(filename)
+        if on_finished:
+            on_finished(filename)
+
     with YoutubeDL(
         {
             "format": "bestaudio[ext=m4a]/bestaudio",
@@ -38,10 +52,11 @@ def download_audio(urls: Sequence[str]) -> list[dict[str, Any]]:
             "fragment_retries": 1000,
             "concurrent_fragment_downloads": 3,
             "retry_sleep_functions": {"fragment": lambda n: n + 1},
+            "post_hooks": [post_hook],  # 다운로드 진행 상황을 알려주는 콜백 함수
         }
     ) as ydl:
         ydl.download(urls)
-        return [ydl.extract_info(url) for url in urls] # type: ignore
+        return filenames
 
 
 def extract_audio(video_path: Path):

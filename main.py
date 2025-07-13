@@ -1,13 +1,14 @@
+import json
 import pathlib
 import subprocess
-from typing import Sequence
+from typing import Any, Sequence
 from download import download_video, extract_audio
 
 
 def process(urls: Sequence[str], lang: str):
 
-    def _process_internal(file_path: str):
-        video_file_path = pathlib.PosixPath(file_path)  # type: ignore
+    def _process_internal(filename: str):
+        video_file_path = pathlib.PosixPath(filename)  # type: ignore
         srt_file_path = video_file_path.with_suffix(".srt")
         audio_file_path = extract_audio(video_file_path)
 
@@ -28,16 +29,7 @@ def process(urls: Sequence[str], lang: str):
 
         audio_file_path.unlink()
 
-    infos = download_video(urls)
-
-    for info in infos:
-        if "requested_downloads" in info:
-            _process_internal(info["requested_downloads"][0]["filepath"])
-        elif "entries" in info:
-            for entry in info["entries"]:
-                _process_internal(entry["requested_downloads"][0]["filepath"])
-        else:
-            raise Exception("The video did not downloaded correctly")
+    download_video(urls, _process_internal)
 
 
 
