@@ -1,7 +1,9 @@
+from pathlib import Path
+import ffmpeg
 from yt_dlp import YoutubeDL
 
 
-def download_video(url):
+def download_video(url: str):
     __video_ext = "mp4"
     with YoutubeDL(
         {
@@ -21,7 +23,7 @@ def download_video(url):
         ydl.download([url])
         return ydl.extract_info(url)
 
-def download_audio(url):
+def download_audio(url: str):
     with YoutubeDL(
         {
             "format": "bestaudio[ext=m4a]/bestaudio",
@@ -36,7 +38,18 @@ def download_audio(url):
         return ydl.extract_info(url)
 
 
+def extract_audio(video_path: Path):
+    audio_path = video_path.with_suffix(".wav")
+    (
+        ffmpeg
+        .input(str(video_path))
+        .output(str(audio_path), format='wav', acodec='pcm_s16le', ac=1, ar='16000')
+        .overwrite_output()
+        .run()
+    )
+    return audio_path
+
+
 if __name__ == "__main__":
     url = input("Enter the YouTube video URL: ")
     video_info = download_video(url)
-    audio_info = download_audio(url)
